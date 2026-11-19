@@ -5,23 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>StudyPulse - Privacy Policy</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #1f2937; }
-    h1 { color: #4f46e5; }
+    body { font-family: Arial, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; line-height: 1.65; color: #1f2937; }
+    h1 { color: #4f46e5; margin-bottom: 4px; }
+    h2 { color: #111827; margin-top: 24px; font-size: 18px; }
+    .meta { color: #6b7280; font-size: 14px; margin-bottom: 24px; }
   </style>
 </head>
 <body>
   <h1>Privacy Policy for StudyPulse</h1>
-  <p><strong>Effective Date:</strong> November 2026</p>
-  <p>StudyPulse is an offline-first student productivity and study companion application developed by Pyush Kushwah.</p>
+  <p class="meta">
+    <strong>Package Name:</strong> com.pyush.studypulse<br />
+    <strong>Developer:</strong> Pyush Kushwah<br />
+    <strong>Effective Date:</strong> November 2026
+  </p>
+
+  <p>StudyPulse is an offline-first student productivity, study timer, PDF reader, and revision companion app. Your privacy is fully respected.</p>
+
   <h2>1. Data Collection and Storage</h2>
-  <p>StudyPulse does <strong>not</strong> collect, transmit, sell, or share any personal data on external servers. All study timers, exam dates, tasks, flashcards, mistake notes, and recent PDF references are stored locally on your device.</p>
-  <h2>2. Permissions Used</h2>
+  <p>StudyPulse does <strong>not</strong> collect, upload, track, sell, or share any personal or usage data on external servers. All study sessions, exam countdowns, syllabus tasks, notes, flashcards, mistakes, and recent PDF references remain stored strictly locally on your device.</p>
+
+  <h2>2. Permissions and Why They Are Used</h2>
   <ul>
-    <li><strong>Notifications &amp; Foreground Service:</strong> Used only to display your active focus timer and send optional daily study reminders.</li>
-    <li><strong>Vibration:</strong> Used to alert you when a study focus session completes.</li>
-    <li><strong>Document Access (Storage Access Framework):</strong> Used only when you manually select a PDF file to read inside the app.</li>
+    <li><strong>Notifications (POST_NOTIFICATIONS):</strong> Used to show your active focus timer and send optional daily study reminders.</li>
+    <li><strong>Foreground Service (FOREGROUND_SERVICE &amp; SPECIAL_USE):</strong> Keeps your active focus timer and optional offline ambient study sound running reliably when the screen is locked.</li>
+    <li><strong>Run at Startup (RECEIVE_BOOT_COMPLETED):</strong> Used solely to reschedule your optional daily study reminder after the phone restarts.</li>
+    <li><strong>Vibration (VIBRATE):</strong> Alerts you gently when a focus or break timer finishes.</li>
+    <li><strong>Document Access &amp; File Sharing:</strong> Used only when you manually pick a PDF to read or choose to export/share your notes as a PDF.</li>
+    <li><strong>Voice Input:</strong> When you tap the microphone icon, the app uses your device's built-in speech recognizer to type notes; StudyPulse does not record or store audio.</li>
   </ul>
-  <h2>3. Contact</h2>
-  <p>If you have any questions, contact: pyushkushwah531@gmail.com</p>
+
+  <h2>3. Third-Party SDKs and Advertising</h2>
+  <p>StudyPulse currently contains no third-party advertising SDKs, analytics trackers, or external user tracking libraries.</p>
+
+  <h2>4. Data Retention and Deletion</h2>
+  <p>Because all data stays on your device, you have full control. You can delete individual tasks, notes, or recent PDF items inside the app at any time, or erase all app data permanently by clearing app storage in Android Settings or uninstalling the app.</p>
+
+  <h2>5. Children's Privacy</h2>
+  <p>StudyPulse is safe for students of all ages and does not knowingly collect any personally identifiable information from children or adults.</p>
+
+  <h2>6. Changes and Contact</h2>
+  <p>Any future updates to this Privacy Policy will be posted on this page. For support or privacy questions, contact: <strong>pyushkushwah531@gmail.com</strong></p>
 </body>
 </html>
