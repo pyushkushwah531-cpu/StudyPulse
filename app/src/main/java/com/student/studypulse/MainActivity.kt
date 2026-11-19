@@ -9,7 +9,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -134,6 +136,23 @@ fun StudyPulseApp(isDark: Boolean, onToggleDark: () -> Unit) {
     val prefs = remember { context.getSharedPreferences("studypulse_prefs", Context.MODE_PRIVATE) }
     var selectedTab by remember { mutableIntStateOf(0) }
     var showSettings by remember { mutableStateOf(false) }
+    var backPressedOnce by remember { mutableStateOf(false) }
+
+    LaunchedEffect(backPressedOnce) {
+        if (backPressedOnce) {
+            delay(2000L)
+            backPressedOnce = false
+        }
+    }
+
+    BackHandler(enabled = selectedTab != 0) {
+        selectedTab = 0
+    }
+
+    BackHandler(enabled = selectedTab == 0 && !backPressedOnce) {
+        backPressedOnce = true
+        Toast.makeText(context, "App band karne ke liye dobara Back dabayein", Toast.LENGTH_SHORT).show()
+    }
 
     val permLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
