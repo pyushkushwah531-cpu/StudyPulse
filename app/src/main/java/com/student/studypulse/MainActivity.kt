@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -41,6 +42,15 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onStop() {
+        super.onStop()
+        val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+        val s = TimerStateHolder.state.value
+        if (!isChangingConfigurations && pm.isInteractive && s.isRunning && !s.isBreak && s.strictMode) {
+            TimerStateHolder.markFocusBroken()
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,25 +79,17 @@ fun StudyPulseApp(isDark: Boolean, onToggleDark: () -> Unit) {
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
                 actions = {
-                    IconButton(onClick = onToggleDark) {
-                        Icon(if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode, "Theme")
-                    }
-                    IconButton(onClick = { showSettings = true }) {
-                        Icon(Icons.Default.NotificationsActive, "Settings & Info")
-                    }
+                    IconButton(onClick = onToggleDark) { Icon(if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode, "Theme") }
+                    IconButton(onClick = { showSettings = true }) { Icon(Icons.Default.NotificationsActive, "Settings") }
                 }
             )
         },
         bottomBar = {
             NavigationBar {
-                NavigationBarItem(selected = selectedTab == 0, onClick = { selectedTab = 0 },
-                    icon = { Icon(Icons.Default.Timer, "Focus") }, label = { Text("Focus") })
-                NavigationBarItem(selected = selectedTab == 1, onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.School, "Exams") }, label = { Text("Exams") })
-                NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 },
-                    icon = { Icon(Icons.Default.NoteAlt, "Notes") }, label = { Text("Notes") })
-                NavigationBarItem(selected = selectedTab == 3, onClick = { selectedTab = 3 },
-                    icon = { Icon(Icons.Default.BarChart, "Stats") }, label = { Text("Stats") })
+                NavigationBarItem(selected = selectedTab == 0, onClick = { selectedTab = 0 }, icon = { Icon(Icons.Default.Timer, "Focus") }, label = { Text("Focus") })
+                NavigationBarItem(selected = selectedTab == 1, onClick = { selectedTab = 1 }, icon = { Icon(Icons.Default.School, "Exams") }, label = { Text("Exams") })
+                NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 }, icon = { Icon(Icons.Default.NoteAlt, "Notes") }, label = { Text("Notes") })
+                NavigationBarItem(selected = selectedTab == 3, onClick = { selectedTab = 3 }, icon = { Icon(Icons.Default.BarChart, "Stats") }, label = { Text("Stats") })
             }
         }
     ) { padding ->
@@ -115,15 +117,11 @@ fun StudyPulseApp(isDark: Boolean, onToggleDark: () -> Unit) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("Vibration (Timer end)")
-                        Switch(checked = vibOn, onCheckedChange = {
-                            vibOn = it; prefs.edit().putBoolean("vibrate_on", it).apply()
-                        })
+                        Switch(checked = vibOn, onCheckedChange = { vibOn = it; prefs.edit().putBoolean("vibrate_on", it).apply() })
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("Alert Sound")
-                        Switch(checked = soundOn, onCheckedChange = {
-                            soundOn = it; prefs.edit().putBoolean("sound_on", it).apply()
-                        })
+                        Switch(checked = soundOn, onCheckedChange = { soundOn = it; prefs.edit().putBoolean("sound_on", it).apply() })
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("Daily Padhai Reminder")
@@ -132,8 +130,7 @@ fun StudyPulseApp(isDark: Boolean, onToggleDark: () -> Unit) {
                                 ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                                 permLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                             }
-                            reminderOn = it
-                            prefs.edit().putBoolean("daily_reminder_enabled", it).apply()
+                            reminderOn = it; prefs.edit().putBoolean("daily_reminder_enabled", it).apply()
                             scheduleDailyReminder(context, remHour, remMin, it)
                         })
                     }
@@ -145,19 +142,12 @@ fun StudyPulseApp(isDark: Boolean, onToggleDark: () -> Unit) {
                                     prefs.edit().putInt("reminder_hour", h).putInt("reminder_min", m).apply()
                                     scheduleDailyReminder(context, h, m, true)
                                 }, remHour, remMin, false).show()
-                            }) {
-                                Text(String.format(Locale.getDefault(), "Time: %02d:%02d", remHour, remMin))
-                            }
-                            OutlinedButton(onClick = { showDailyReminderNotification(context) }) {
-                                Text("Test Alert")
-                            }
+                            }) { Text(String.format(Locale.getDefault(), "Time: %02d:%02d", remHour, remMin)) }
+                            OutlinedButton(onClick = { showDailyReminderNotification(context) }) { Text("Test Alert") }
                         }
                     }
                     HorizontalDivider()
-                    Text(
-                        "StudyPulse v2.0 • 100% Offline\nAapke saare notes, tasks aur study record sirf aapke phone mein safe rehte hain.",
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text("StudyPulse v3.0 • 100% Offline\nAapke saare notes, mistakes aur study record sirf aapke phone mein safe rehte hain.", style = MaterialTheme.typography.bodySmall)
                 }
             },
             confirmButton = { TextButton(onClick = { showSettings = false }) { Text("Done") } }
