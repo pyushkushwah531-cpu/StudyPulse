@@ -9,15 +9,31 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.student.studypulse"
+        applicationId = "com.pyush.studypulse"
         minSdk = 24
         targetSdk = 35
         versionCode = 4
         versionName = "4.0.0"
     }
 
+    signingConfigs {
+        create("release") {
+            val ksPath = System.getenv("KEYSTORE_PATH")
+            if (!ksPath.isNullOrBlank() && file(ksPath).exists()) {
+                storeFile = file(ksPath)
+                storePassword = System.getenv("STORE_PASSWORD") ?: "StudyPulse@2026"
+                keyAlias = System.getenv("KEY_ALIAS") ?: "studypulse"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: "StudyPulse@2026"
+            }
+        }
+    }
+
     buildTypes {
         release {
+            val ksPath = System.getenv("KEYSTORE_PATH")
+            if (!ksPath.isNullOrBlank() && file(ksPath).exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
