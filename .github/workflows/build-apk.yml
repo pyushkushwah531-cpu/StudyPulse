@@ -1,4 +1,4 @@
-name: Build Native Android APK
+name: Build Release APK and AAB
 
 on:
   workflow_dispatch:
@@ -21,16 +21,56 @@ jobs:
       - name: Accept Android SDK Licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses || true
 
+      - name: Generate App PNG Icons
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq librsvg2-bin
+          cat << 'EOF' > icon.svg
+          <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 108 108">
+            <rect width="108" height="108" rx="24" fill="#4F46E5"/>
+            <polygon points="54,22 20,38 54,54 88,38" fill="#FFFFFF"/>
+            <path d="M32,48 L32,68 C32,76 42,82 54,82 C66,82 76,76 76,68 L76,48 L54,59 Z" fill="#E0E7FF"/>
+            <rect x="82" y="42" width="4" height="24" fill="#FBBF24"/>
+          </svg>
+          EOF
+          mkdir -p app/src/main/res/mipmap-mdpi app/src/main/res/mipmap-hdpi app/src/main/res/mipmap-xhdpi app/src/main/res/mipmap-xxhdpi app/src/main/res/mipmap-xxxhdpi
+          rsvg-convert -w 48 -h 48 icon.svg -o app/src/main/res/mipmap-mdpi/ic_launcher.png
+          rsvg-convert -w 72 -h 72 icon.svg -o app/src/main/res/mipmap-hdpi/ic_launcher.png
+          rsvg-convert -w 96 -h 96 icon.svg -o app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          rsvg-convert -w 144 -h 144 icon.svg -o app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          rsvg-convert -w 192 -h 192 icon.svg -o app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          rsvg-convert -w 512 -h 512 icon.svg -o icon-512x512.png
+
+      - name: Prepare Release Keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > release-key.jks
+          else
+            keytool -genkeypair -v -keystore release-key.jks -alias studypulse -keyalg RSA -keysize 2048 -validity 10000 -storepass StudyPulse@2026 -keypass StudyPulse@2026 -dname "CN=StudyPulse, O=Pyush, C=IN"
+            base64 -w 0 release-key.jks > KEYSTORE_BASE64.txt
+          fi
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
 
-      - name: Build Debug APK
-        run: gradle assembleDebug
+      - name: Build Signed Release APK & AAB
+        env:
+          KEYSTORE_PATH: ${{ github.workspace }}/release-key.jks
+        run: gradle assembleRelease bundleRelease
 
-      - name: Upload APK
+      - name: Collect Store Files
+        run: |
+          mkdir -p store_release
+          cp app/build/outputs/apk/release/app-release.apk store_release/StudyPulse-v4.0-release.apk
+          cp app/build/outputs/bundle/release/app-release.aab store_release/StudyPulse-v4.0-release.aab
+          cp icon-512x512.png store_release/icon-512x512.png
+          if [ -f KEYSTORE_BASE64.txt ]; then cp release-key.jks KEYSTORE_BASE64.txt store_release/; fi
+
+      - name: Upload Store Release Package
         uses: actions/upload-artifact@v4
         with:
-          name: StudyPulse-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: StudyPulse-Store-Release
+          path: store_release/
