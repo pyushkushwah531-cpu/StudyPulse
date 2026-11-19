@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.speech.RecognizerIntent
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -232,10 +233,14 @@ fun ExamTrackerScreen(prefs: SharedPreferences) {
 fun NotesAndFlashcardsScreen(prefs: SharedPreferences) {
     val context = LocalContext.current
     var notes by remember { mutableStateOf(loadNotes(prefs)) }
-    var tabMode by remember { mutableIntStateOf(0) } // 0=All, 1=Mistakes, 2=Flashcards
+    var tabMode by remember { mutableIntStateOf(0) }
     var cardIndex by remember { mutableIntStateOf(0) }
     var flipped by remember { mutableStateOf(false) }
     var showAdd by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = tabMode != 0) {
+        tabMode = 0
+    }
 
     val filtered = if (tabMode == 1) notes.filter { it.isMistake } else notes
 
@@ -304,7 +309,7 @@ fun NotesAndFlashcardsScreen(prefs: SharedPreferences) {
         FloatingActionButton(onClick = { showAdd = true }, modifier = Modifier.align(Alignment.BottomEnd)) { Icon(Icons.Default.Add, "Add") }
     }
 
-if (showAdd) {
+ if (showAdd) {
         var subject by remember { mutableStateOf("") }
         var title by remember { mutableStateOf("") }
         var content by remember { mutableStateOf("") }
@@ -405,4 +410,3 @@ fun StatsScreen(prefs: SharedPreferences) {
     }
 }
 // END_OF_FILE
-        
