@@ -3,7 +3,9 @@ package com.student.studypulse
 import android.Manifest
 import android.app.TimePickerDialog
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
@@ -222,6 +224,16 @@ fun StudyPulseApp(isDark: Boolean, onToggleDark: () -> Unit) {
                     }
                     HorizontalDivider()
                     Text("StudyPulse v4.0 • 100% Offline\nAapke saare PDFs, notes, mistakes aur study record sirf aapke phone mein safe rehte hain.", style = MaterialTheme.typography.bodySmall)
+                    TextButton(
+                        onClick = {
+                            try {
+                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://pyushkushwah531-cpu.github.io/StudyPulse/")))
+                            } catch (_: Exception) {}
+                        },
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text("View Privacy Policy")
+                    }
                 }
             },
             confirmButton = { TextButton(onClick = { showSettings = false }) { Text("Done") } }
