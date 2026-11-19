@@ -12,8 +12,8 @@ android {
         applicationId = "com.student.studypulse"
         minSdk = 24
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "3.0.0"
     }
 
     buildTypes {
@@ -49,3 +49,4 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
 }
+// END_OF_FILE
