@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.ParcelFileDescriptor
 import android.provider.OpenableColumns
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -59,6 +60,10 @@ fun PdfReaderScreen(prefs: SharedPreferences) {
     var offset by remember { mutableStateOf(Offset.Zero) }
     var showJumpDialog by remember { mutableStateOf(false) }
     var showQuickNote by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = activeUri != null) {
+        activeUri = null
+    }
 
     val openPdfLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
