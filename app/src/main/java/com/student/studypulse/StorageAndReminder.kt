@@ -20,7 +20,14 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 data class StudyTask(val id: Long, val subject: String, val title: String, val done: Boolean)
-data class RevisionNote(val id: Long, val subject: String, val title: String, val content: String, val mastered: Boolean = false)
+data class RevisionNote(
+    val id: Long,
+    val subject: String,
+    val title: String,
+    val content: String,
+    val mastered: Boolean = false,
+    val isMistake: Boolean = false
+)
 
 class DailyReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -90,12 +97,8 @@ fun triggerFinishFeedback(context: Context, vibrateOn: Boolean, soundOn: Boolean
             } else {
                 @Suppress("DEPRECATION")
                 val v = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    v.vibrate(VibrationEffect.createWaveform(pattern, -1))
-                } else {
-                    @Suppress("DEPRECATION")
-                    v.vibrate(pattern, -1)
-                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) v.vibrate(VibrationEffect.createWaveform(pattern, -1))
+                else { @Suppress("DEPRECATION") v.vibrate(pattern, -1) }
             }
         } catch (_: Exception) {}
     }
@@ -157,22 +160,14 @@ fun exportNotesToPdfAndShare(context: Context, notes: List<RevisionNote>) {
     var pageNum = 1
     var page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNum).create())
     var y = 50f
-    page.canvas.drawText("StudyPulse - My Revision Notes", 40f, y, titlePaint)
+    page.canvas.drawText("StudyPulse - Revision & Mistake Notes", 40f, y, titlePaint)
     y += 30f
     notes.forEach { n ->
-        if (y > 760f) {
-            doc.finishPage(page); pageNum++
-            page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNum).create())
-            y = 50f
-        }
-        page.canvas.drawText("[${n.subject}] ${n.title}", 40f, y, subPaint)
-        y += 18f
+        if (y > 760f) { doc.finishPage(page); pageNum++; page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNum).create()); y = 50f }
+        val tag = if (n.isMistake) "[MISTAKE] " else ""
+        page.canvas.drawText("$tag[${n.subject}] ${n.title}", 40f, y, subPaint); y += 18f
         n.content.chunked(68).forEach { line ->
-            if (y > 780f) {
-                doc.finishPage(page); pageNum++
-                page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNum).create())
-                y = 50f
-            }
+            if (y > 780f) { doc.finishPage(page); pageNum++; page = doc.startPage(PdfDocument.PageInfo.Builder(595, 842, pageNum).create()); y = 50f }
             page.canvas.drawText(line, 40f, y, bodyPaint); y += 16f
         }
         y += 12f
@@ -183,16 +178,17 @@ fun exportNotesToPdfAndShare(context: Context, notes: List<RevisionNote>) {
     doc.close()
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
     val shareIntent = Intent(Intent.ACTION_SEND).apply {
-        type = "application/pdf"
-        putExtra(Intent.EXTRA_STREAM, uri)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        type = "application/pdf"; putExtra(Intent.EXTRA_STREAM, uri); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(shareIntent, "Share StudyPulse PDF"))
 }
 
 fun shareNotesAsText(context: Context, notes: List<RevisionNote>) {
     val sb = StringBuilder("*StudyPulse Notes*\n\n")
-    notes.forEachIndexed { i, n -> sb.append("${i + 1}. [${n.subject}] ${n.title}\n${n.content}\n\n") }
+    notes.forEachIndexed { i, n ->
+        val tag = if (n.isMistake) "[MISTAKE] " else ""
+        sb.append("${i + 1}. $tag[${n.subject}] ${n.title}\n${n.content}\n\n")
+    }
     val intent = Intent(Intent.ACTION_SEND).apply { type = "text/plain"; putExtra(Intent.EXTRA_TEXT, sb.toString()) }
     context.startActivity(Intent.createChooser(intent, "Share Notes"))
 }
@@ -214,7 +210,8 @@ fun loadNotes(prefs: SharedPreferences): List<RevisionNote> {
     val arr = JSONArray(prefs.getString("notes_json", "[]") ?: "[]")
     return List(arr.length()) { i ->
         arr.getJSONObject(i).let {
-            RevisionNote(it.getLong("id"), it.optString("subject", "General"), it.optString("title", "Topic"), it.getString("content"), it.optBoolean("mastered", false))
+            RevisionNote(it.getLong("id"), it.optString("subject", "General"), it.optString("title", "Topic"),
+                it.getString("content"), it.optBoolean("mastered", false), it.optBoolean("isMistake", false))
         }
     }
 }
@@ -223,7 +220,8 @@ fun saveNotes(prefs: SharedPreferences, notes: List<RevisionNote>) {
     val arr = JSONArray()
     notes.forEach {
         arr.put(JSONObject().apply {
-            put("id", it.id); put("subject", it.subject); put("title", it.title); put("content", it.content); put("mastered", it.mastered)
+            put("id", it.id); put("subject", it.subject); put("title", it.title)
+            put("content", it.content); put("mastered", it.mastered); put("isMistake", it.isMistake)
         })
     }
     prefs.edit().putString("notes_json", arr.toString()).apply()
