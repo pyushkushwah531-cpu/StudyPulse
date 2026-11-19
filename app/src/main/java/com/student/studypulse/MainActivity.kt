@@ -11,17 +11,30 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.delay
 import java.util.Locale
 
 class MainActivity : ComponentActivity() {
@@ -30,15 +43,20 @@ class MainActivity : ComponentActivity() {
         setContent {
             val prefs = remember { getSharedPreferences("studypulse_prefs", Context.MODE_PRIVATE) }
             var isDark by remember { mutableStateOf(prefs.getBoolean("dark_mode", false)) }
+            var showSplash by rememberSaveable { mutableStateOf(true) }
 
             MaterialTheme(colorScheme = if (isDark) darkColorScheme() else lightColorScheme()) {
-                StudyPulseApp(
-                    isDark = isDark,
-                    onToggleDark = {
-                        isDark = !isDark
-                        prefs.edit().putBoolean("dark_mode", isDark).apply()
-                    }
-                )
+                if (showSplash) {
+                    SplashScreen(onDone = { showSplash = false })
+                } else {
+                    StudyPulseApp(
+                        isDark = isDark,
+                        onToggleDark = {
+                            isDark = !isDark
+                            prefs.edit().putBoolean("dark_mode", isDark).apply()
+                        }
+                    )
+                }
             }
         }
     }
@@ -49,6 +67,60 @@ class MainActivity : ComponentActivity() {
         val s = TimerStateHolder.state.value
         if (!isChangingConfigurations && pm.isInteractive && s.isRunning && !s.isBreak && s.strictMode) {
             TimerStateHolder.markFocusBroken()
+        }
+    }
+}
+
+@Composable
+fun SplashScreen(onDone: () -> Unit) {
+    val scaleAnim = remember { Animatable(0.6f) }
+    val alphaAnim = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        scaleAnim.animateTo(1f, animationSpec = tween(700, easing = FastOutSlowInEasing))
+    }
+    LaunchedEffect(Unit) {
+        alphaAnim.animateTo(1f, animationSpec = tween(700))
+        delay(2300L)
+        onDone()
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(Color(0xFF312E81), Color(0xFF4F46E5)))),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.scale(scaleAnim.value).alpha(alphaAnim.value)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_app_icon),
+                contentDescription = "StudyPulse Logo",
+                modifier = Modifier.size(110.dp)
+            )
+            Spacer(Modifier.height(20.dp))
+            Text(
+                text = "StudyPulse",
+                fontSize = 36.sp,
+                fontWeight = FontWeight.ExtraBold,
+                letterSpacing = 2.sp,
+                color = Color.White
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "Focus • Track • Master",
+                fontSize = 14.sp,
+                letterSpacing = 1.5.sp,
+                color = Color(0xFFE0E7FF)
+            )
+            Spacer(Modifier.height(28.dp))
+            CircularProgressIndicator(
+                color = Color(0xFFFBBF24),
+                strokeWidth = 3.dp,
+                modifier = Modifier.size(28.dp)
+            )
         }
     }
 }
@@ -88,8 +160,9 @@ fun StudyPulseApp(isDark: Boolean, onToggleDark: () -> Unit) {
             NavigationBar {
                 NavigationBarItem(selected = selectedTab == 0, onClick = { selectedTab = 0 }, icon = { Icon(Icons.Default.Timer, "Focus") }, label = { Text("Focus") })
                 NavigationBarItem(selected = selectedTab == 1, onClick = { selectedTab = 1 }, icon = { Icon(Icons.Default.School, "Exams") }, label = { Text("Exams") })
-                NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 }, icon = { Icon(Icons.Default.NoteAlt, "Notes") }, label = { Text("Notes") })
-                NavigationBarItem(selected = selectedTab == 3, onClick = { selectedTab = 3 }, icon = { Icon(Icons.Default.BarChart, "Stats") }, label = { Text("Stats") })
+                NavigationBarItem(selected = selectedTab == 2, onClick = { selectedTab = 2 }, icon = { Icon(Icons.Default.PictureAsPdf, "PDF") }, label = { Text("PDF") })
+                NavigationBarItem(selected = selectedTab == 3, onClick = { selectedTab = 3 }, icon = { Icon(Icons.Default.NoteAlt, "Notes") }, label = { Text("Notes") })
+                NavigationBarItem(selected = selectedTab == 4, onClick = { selectedTab = 4 }, icon = { Icon(Icons.Default.BarChart, "Stats") }, label = { Text("Stats") })
             }
         }
     ) { padding ->
@@ -97,8 +170,9 @@ fun StudyPulseApp(isDark: Boolean, onToggleDark: () -> Unit) {
             when (selectedTab) {
                 0 -> FocusScreen(prefs)
                 1 -> ExamTrackerScreen(prefs)
-                2 -> NotesAndFlashcardsScreen(prefs)
-                3 -> StatsScreen(prefs)
+                2 -> PdfReaderScreen(prefs)
+                3 -> NotesAndFlashcardsScreen(prefs)
+                4 -> StatsScreen(prefs)
             }
         }
     }
@@ -147,7 +221,7 @@ fun StudyPulseApp(isDark: Boolean, onToggleDark: () -> Unit) {
                         }
                     }
                     HorizontalDivider()
-                    Text("StudyPulse v3.0 • 100% Offline\nAapke saare notes, mistakes aur study record sirf aapke phone mein safe rehte hain.", style = MaterialTheme.typography.bodySmall)
+                    Text("StudyPulse v4.0 • 100% Offline\nAapke saare PDFs, notes, mistakes aur study record sirf aapke phone mein safe rehte hain.", style = MaterialTheme.typography.bodySmall)
                 }
             },
             confirmButton = { TextButton(onClick = { showSettings = false }) { Text("Done") } }
