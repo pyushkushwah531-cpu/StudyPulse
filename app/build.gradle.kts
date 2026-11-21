@@ -12,8 +12,8 @@ android {
         applicationId = "com.pyush.studypulse"
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "4.0.0"
+        versionCode = 5
+        versionName = "5.0.0"
     }
 
     signingConfigs {
@@ -64,5 +64,6 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+implementation("com.google.android.gms:play-services-ads:23.6.0")
 }
 // END_OF_FILE
